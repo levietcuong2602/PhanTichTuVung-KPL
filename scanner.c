@@ -44,18 +44,17 @@ void skipComment()
       if (state == 4)
       {
         state = 5;
-        readChar();
       }
       break;
     default:
-      state = 3;
+      state = 0;
       break;
     }
   }
   // error không đóng comment
   if(currentChar == EOF)
     error(ERR_ENDOFCOMMENT, lineNo, colNo);
-  state = 0;
+  readChar();
 }
 
 Token *readIdentKeyword(void)
@@ -135,12 +134,14 @@ Token *readConstChar(void)
   readChar();
   string[0] = currentChar;
   string[1] = '\0';
+  state = 35;
 
   if (charCodes[currentChar] == CHAR_SINGLEQUOTE)
   {
     readChar();
     if (charCodes[currentChar] != CHAR_SINGLEQUOTE)
     {
+      state = 38;
       token = makeToken(TK_NONE, lineNo, colNo);
       error(ERR_INVALIDCHARCONSTANT, beginColNo, beginLineNo);
       return token;
@@ -151,11 +152,13 @@ Token *readConstChar(void)
   switch (charCodes[currentChar])
   {
   case CHAR_SINGLEQUOTE:
+    state = 36;
     token = makeToken(TK_CHAR, beginLineNo, beginColNo);
     strcpy(token->string, string);
     readChar();
     return token;
   default:
+    state = 38;
     token = makeToken(TK_NONE, lineNo, colNo);
     error(ERR_INVALIDCHARCONSTANT, beginColNo, beginLineNo);
     return token;
@@ -165,10 +168,12 @@ Token *readConstChar(void)
 Token *getToken(void)
 {
   Token *token;
-  // int ln, cn;
+  int ln, cn;
 
   if (currentChar == EOF)
-    return makeToken(TK_EOF, lineNo, colNo); // tạo token eof
+  {
+    state = 37;
+  }
 
   switch (state)
   {
@@ -200,45 +205,38 @@ Token *getToken(void)
           return token;
       }
       return getToken();
-    case 1:
+    case 1: // space
       skipBlank();
       state = 0;
       return getToken();
-    case 2:
-      // Todo (
+    case 2: // (
       readChar();
       switch (charCodes[currentChar])
       {
-      case CHAR_TIMES:
-        // nếu phát hiện (* thì bắt đầu của comment
-        // hết comment khi nó gặp *)
-        // không đóng comment sẽ in ra lỗi
-        state = 3;
-        return getToken();
-      case CHAR_PERIOD:
-        state = 6;
-        return getToken();
-      default:
-        state = 7;
-        return getToken();
+      // nếu phát hiện (* thì bắt đầu của comment
+      // hết comment khi nó gặp *)
+      // không đóng comment sẽ in ra lỗi
+      case CHAR_TIMES: state = 3; break;
+      case CHAR_PERIOD: state = 6; break;
+      default: state = 7; break;
       }
-    case 3:
+      return getToken();
+    case 3: // (* comment
       skipComment();
-      state=0;
+      state = 0;
       return getToken();
     case 6: // (.
       state = 0;
       token = makeToken(SB_LSEL, lineNo, colNo);
       return token;
-    case 7:
+    case 7: // (
       token = makeToken(SB_LPAR, lineNo, colNo - 1);
       // ko read char nua vi neu se doc mat ki tu sau
       return token;
-    case 8:
+    case 8: // keyword  
       state = 0;
       return readIdentKeyword();
-    case 10:
-      // Todo number
+    case 10: // digital
       return readNumber();
     case 12: // +
       state = 0;
@@ -275,39 +273,97 @@ Token *getToken(void)
       token = makeToken(SB_SEMICOLON, lineNo, colNo);
       readChar();
       return token;
-    // case 19:
-    //   // Todo .
-    //   break;
-    // case 20:
-    // case 21:
-    // case 22:
-    //   // Todo >
-    //   break;
-    // case 23:
-    // case 24:
-    // case 25:
-    //   // Todo <
-    //   break;
-    // case 26:
-    // case 27:
-    // case 28:
-    //   // Todo !
-    //   break;
-    // case 29:
-    // case 30:
-    // case 31:
-    //   // Todo :
-    //   break;
-    // case 32:
-    // case 33:
-    // case 34:
-    //   // Todo '
-    //   break;
-    // case 35:
-    // case 36:
-    // case 37:
-    // case 38:
-    case 39:
+    case 19: // .
+      readChar();
+      switch (charCodes[currentChar])
+      {
+      case CHAR_RPAR: state = 20;
+      default: state = 21;
+      }
+      return getToken();
+    case 20: // .)
+      ln = lineNo;
+      cn = colNo;
+      token = makeToken(SB_RSEL, ln, cn);
+      readChar();
+      return token;
+    case 21: // .
+      ln = lineNo;
+      cn = colNo-1;
+      token = makeToken(SB_PERIOD, ln, cn);
+      //readChar();
+      return token;
+    case 22: // >
+      readChar();
+      switch (charCodes[currentChar])
+      {
+      case CHAR_EQ: state = 23;
+      default: state = 24;
+      }
+      return getToken();
+    case 23: // >=
+      token = makeToken(SB_GE, lineNo, colNo - 1);
+      readChar();
+      return token;
+    case 24: // >
+      token = makeToken(SB_GT, lineNo, colNo - 1);
+      return token;
+    case 25: // <
+      readChar();
+      switch (charCodes[currentChar])
+      {
+      case CHAR_EQ: state = 26;
+      default: state = 27;
+      }
+      return getToken();
+    case 26: // <=
+      token = makeToken(SB_LE, lineNo, colNo-1);
+      readChar();
+      return token;
+    case 27: // <
+      token = makeToken(SB_LT, lineNo, colNo - 1);
+      return token;
+    case 28: // !
+      readChar();
+      switch (charCodes[currentChar])
+      {
+      case CHAR_EQ: state = 29;
+      default: state = 30;
+      }
+      return getToken();
+    case 29: // !=
+      token = makeToken(SB_NEQ, lineNo, colNo - 1);
+      readChar();
+      return token;
+    case 30: // ! error
+      token = makeToken(TK_NONE, lineNo, colNo - 1);
+      error(ERR_INVALIDSYMBOL, lineNo, colNo);
+      readChar();
+      return token;
+    case 31: // :
+      readChar();
+      switch (charCodes[currentChar])
+      {
+      case CHAR_EQ: state = 32;
+      default: state = 33;
+      }
+      return getToken();
+    case 32: // :=
+      token = makeToken(SB_ASSIGN, lineNo, colNo - 1);
+      readChar();
+      return token;
+    case 33: // :
+      token = makeToken(SB_COLON, lineNo, colNo - 1);
+      //readChar();
+      return token;
+    case 34: // '
+      // nếu là 4 dấu '''' -> return '
+      // và chỉ cho phép bên trong '' là 1 kí tự
+      // nếu quá sẽ báo lỗi simple
+      return readConstChar();
+    case 37: // eof
+      return makeToken(TK_EOF, lineNo, colNo); // tạo token eof
+    case 39: // )
       state = 0;
       token = makeToken(SB_RPAR, lineNo, colNo);
       readChar();
@@ -318,162 +374,6 @@ Token *getToken(void)
       readChar();
       return token;
   }
-
-/*
-  // map code ASCII với token tương ứng.
-  switch (charCodes[currentChar])
-  {
-  case CHAR_SPACE:
-    // bỏ qua khoảng trắng và đọc kí tự tiếp theo.
-    skipBlank();
-    return getToken();
-  case CHAR_LETTER:
-    // nếu là kí tự thì đọc kí tự tiếp theo xem nó có phải là keyword identify không.
-    // nếu là keyword thì trả về token ứng với keyword
-    // ngược lại, không phải thì nó là identify (có kiểm tra lỗi max length trong này)
-    state = 8;
-    return readIdentKeyword();
-  case CHAR_DIGIT:
-    // nếu là số thì lấy tiếp kí tự tiếp theo.
-    // nó quá max length hoặc gặp kí tự khác số thì dừng lặp.
-    return readNumber();
-  case CHAR_PLUS:
-    token = makeToken(SB_PLUS, lineNo, colNo);
-    readChar();
-    return token;
-  case CHAR_MINUS:
-    token = makeToken(SB_MINUS, lineNo, colNo);
-    readChar();
-    return token;
-  case CHAR_TIMES:
-    token = makeToken(SB_TIMES, lineNo, colNo);
-    readChar();
-    return token;
-  case CHAR_SLASH:
-    token = makeToken(SB_SLASH, lineNo, colNo);
-    readChar();
-    return token;
-  case CHAR_SEMICOLON:
-    token = makeToken(SB_SEMICOLON, lineNo, colNo);
-    readChar();
-    return token;
-  case CHAR_LPAR:
-    readChar();
-    switch (charCodes[currentChar])
-    {
-    case CHAR_TIMES:
-      // nếu phát hiện (* thì bắt đầu của comment
-      // hết comment khi nó gặp *)
-      // không đóng comment sẽ in ra lỗi
-      skipComment();
-      return getToken();
-    case CHAR_PERIOD:
-      token = makeToken(SB_LSEL, lineNo, colNo);
-      readChar();
-      return token;
-    default:
-      token = makeToken(SB_LPAR, lineNo, colNo - 1);
-      // ko read char nua vi neu se doc mat ki tu sau
-      return token;
-    }
-  case CHAR_RPAR:
-    token = makeToken(SB_RPAR, lineNo, colNo);
-    readChar();
-    return token;
-  case CHAR_EQ:
-    token = makeToken(SB_EQ, lineNo, colNo);
-    readChar();
-    return token;
-  case CHAR_COLON:
-    readChar();
-    switch (charCodes[currentChar])
-    {
-    case CHAR_EQ: 
-      token = makeToken(SB_ASSIGN, lineNo, colNo - 1);
-      readChar();
-      return token;
-    default:
-      token = makeToken(SB_COLON, lineNo, colNo - 1);
-      //readChar();
-      return token;
-    }
-  case CHAR_PERIOD:
-    ln = lineNo;
-    cn = colNo;
-    readChar();
-    switch (charCodes[currentChar])
-    {
-    case CHAR_RPAR:
-      token = makeToken(SB_RSEL, ln, cn);
-      readChar();
-      return token;
-    default:
-      token = makeToken(SB_PERIOD, ln, cn);
-      //readChar();
-      return token;
-    }
-  case CHAR_EXCLAIMATION:
-    readChar();
-    switch (charCodes[currentChar])
-    {
-    case CHAR_EQ:
-      token = makeToken(SB_NEQ, lineNo, colNo - 1);
-      readChar();
-      return token;
-    default:
-      token = makeToken(TK_NONE, lineNo, colNo - 1);
-      error(ERR_INVALIDSYMBOL, lineNo, colNo);
-      readChar();
-      return token;
-    }
-  case CHAR_COMMA:
-    token = makeToken(SB_COMMA, lineNo, colNo);
-    readChar();
-    return token;
-  case CHAR_SINGLEQUOTE:
-    // nếu là 4 dấu '''' -> return '
-    // và chỉ cho phép bên trong '' là 1 kí tự
-    // nếu quá sẽ báo lỗi simple
-    return readConstChar();
-  case CHAR_LT:
-    readChar();
-    switch (charCodes[currentChar])
-    {
-    case CHAR_EQ:
-      token = makeToken(SB_LE, lineNo, colNo - 1);
-      readChar();
-      return token;
-    case CHAR_GT:
-      token = makeToken(SB_NEQ, lineNo, colNo - 1);
-      readChar();
-      return token;
-    default:
-      token = makeToken(SB_LT, lineNo, colNo - 1);
-      return token;
-    }
-  case CHAR_GT:
-    readChar();
-    switch (charCodes[currentChar])
-    {
-    case CHAR_EQ:
-      token = makeToken(SB_GE, lineNo, colNo - 1);
-      readChar();
-      return token;
-    case CHAR_LT:
-      token = makeToken(SB_NEQ, lineNo, colNo - 1);
-      readChar();
-      return token;
-    default:
-      token = makeToken(SB_GT, lineNo, colNo - 1);
-      return token;
-    }
-  default:
-    token = makeToken(TK_NONE, lineNo, colNo);
-    error(ERR_INVALIDSYMBOL, lineNo, colNo);
-    readChar();
-    return token;
-  }
-  */
 }
 
 /******************************************************************/
