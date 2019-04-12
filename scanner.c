@@ -22,7 +22,7 @@ extern CharCode charCodes[];
 
 void skipBlank()
 {
-  while (currentChar != EOF && state == 1)
+  while (currentChar != EOF && charCodes[currentChar] == CHAR_SPACE)
   {
     // đọc kí tự tiếp theo.
     readChar();
@@ -71,7 +71,6 @@ Token *readIdentKeyword(void)
     {
       if (!CATCH_TOOLONG_ERR)
       {
-        state = 18;
         error(ERR_IDENTTOOLONG, lineNo, colNo);
       }
       else
@@ -176,14 +175,12 @@ Token *getToken(void)
   {
   case CHAR_SPACE:
     // bỏ qua khoảng trắng và đọc kí tự tiếp theo.
-    state = 1;
     skipBlank();
     return getToken();
   case CHAR_LETTER:
     // nếu là kí tự thì đọc kí tự tiếp theo xem nó có phải là keyword identify không.
     // nếu là keyword thì trả về token ứng với keyword
     // ngược lại, không phải thì nó là identify (có kiểm tra lỗi max length trong này)
-    state = 8;
     return readIdentKeyword();
   case CHAR_DIGIT:
     // nếu là số thì lấy tiếp kí tự tiếp theo.
