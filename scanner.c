@@ -475,8 +475,6 @@ void printToken(Token *token)
 
 int scan(char *fileName)
 {
-  //khởi tạo state = 0
-  state = 0;
   // khởi tạo token rỗng
   Token *token;
   // đọc file đầu vào được viết bằng kpl
