@@ -72,7 +72,6 @@ Token *readIdentKeyword(void)
     {
       if (!CATCH_TOOLONG_ERR)
       {
-        state = 18;
         error(ERR_IDENTTOOLONG, lineNo, colNo);
       }
       else
@@ -166,7 +165,7 @@ Token *readConstChar(void)
 Token *getToken(void)
 {
   Token *token;
-  int ln, cn;
+  // int ln, cn;
 
   if (currentChar == EOF)
     return makeToken(TK_EOF, lineNo, colNo); // tạo token eof
@@ -177,9 +176,9 @@ Token *getToken(void)
       switch (charCodes[currentChar])
       {
         case CHAR_SPACE: state = 1; break;
+        case CHAR_LPAR: state = 2; break;
         case CHAR_LETTER: state = 8; break;
         case CHAR_DIGIT: state = 10; break;
-        case CHAR_LPAR: state = 2; break;
         case CHAR_PLUS: state = 12; break;
         case CHAR_MINUS: state = 13; break;
         case CHAR_TIMES: state = 14; break;
@@ -194,12 +193,17 @@ Token *getToken(void)
         case CHAR_COLON: state = 31; break;
         case CHAR_SINGLEQUOTE: state = 34; break;
         case CHAR_RPAR: state = 39; break;
+        default:
+          token = makeToken(TK_NONE, lineNo, colNo);
+          error(ERR_INVALIDSYMBOL, lineNo, colNo);
+          readChar();
+          return token;
       }
-      break;
+      return getToken();
     case 1:
       skipBlank();
       state = 0;
-      break;
+      return getToken();
     case 2:
       // Todo (
       readChar();
@@ -230,8 +234,6 @@ Token *getToken(void)
       return token;
     case 7:
     case 8:
-    case 9:
-      // Todo letter
       return readIdentKeyword();
     case 10:
     case 11:
@@ -272,38 +274,38 @@ Token *getToken(void)
       token = makeToken(SB_SEMICOLON, lineNo, colNo);
       readChar();
       return token;
-    case 19:
-      // Todo .
-      break;
-    case 20:
-    case 21:
-    case 22:
-      // Todo >
-      break;
-    case 23:
-    case 24:
-    case 25:
-      // Todo <
-      break;
-    case 26:
-    case 27:
-    case 28:
-      // Todo !
-      break;
-    case 29:
-    case 30:
-    case 31:
-      // Todo :
-      break;
-    case 32:
-    case 33:
-    case 34:
-      // Todo '
-      break;
-    case 35:
-    case 36:
-    case 37:
-    case 38:
+    // case 19:
+    //   // Todo .
+    //   break;
+    // case 20:
+    // case 21:
+    // case 22:
+    //   // Todo >
+    //   break;
+    // case 23:
+    // case 24:
+    // case 25:
+    //   // Todo <
+    //   break;
+    // case 26:
+    // case 27:
+    // case 28:
+    //   // Todo !
+    //   break;
+    // case 29:
+    // case 30:
+    // case 31:
+    //   // Todo :
+    //   break;
+    // case 32:
+    // case 33:
+    // case 34:
+    //   // Todo '
+    //   break;
+    // case 35:
+    // case 36:
+    // case 37:
+    // case 38:
     case 39:
       state = 0;
       token = makeToken(SB_RPAR, lineNo, colNo);
@@ -314,7 +316,6 @@ Token *getToken(void)
       error(ERR_INVALIDSYMBOL, lineNo, colNo);
       readChar();
       return token;
-      break;
   }
 
 /*
@@ -633,6 +634,7 @@ int scan(char *fileName)
   token = getToken();
   while (token->tokenType != TK_EOF)
   {
+    state = 0;
     printToken(token);
     free(token);
     token = getToken();
