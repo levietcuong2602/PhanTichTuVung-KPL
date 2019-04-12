@@ -17,12 +17,13 @@ extern int lineNo;
 extern int colNo; 
 extern int currentChar;
 extern CharCode charCodes[];
+int state;
 
 /***************************************************************/
 
 void skipBlank()
 {
-  while (currentChar != EOF && state == 1)
+  while (currentChar != EOF && charCodes[currentChar] == CHAR_SPACE)
   {
     // đọc kí tự tiếp theo.
     readChar();
@@ -168,15 +169,160 @@ Token *getToken(void)
   int ln, cn;
 
   if (currentChar == EOF)
-    // tạo token eof
-    return makeToken(TK_EOF, lineNo, colNo);
+    return makeToken(TK_EOF, lineNo, colNo); // tạo token eof
 
+  switch (state)
+  {
+    case 0:
+      switch (charCodes[currentChar])
+      {
+        case CHAR_SPACE: state = 1; break;
+        case CHAR_LETTER: state = 8; break;
+        case CHAR_DIGIT: state = 10; break;
+        case CHAR_LPAR: state = 2; break;
+        case CHAR_PLUS: state = 12; break;
+        case CHAR_MINUS: state = 13; break;
+        case CHAR_TIMES: state = 14; break;
+        case CHAR_SLASH: state = 15; break;
+        case CHAR_EQ: state = 16; break;
+        case CHAR_COMMA: state = 17; break;
+        case CHAR_SEMICOLON: state = 18; break;
+        case CHAR_PERIOD: state = 19; break;
+        case CHAR_GT: state = 22; break;
+        case CHAR_LT: state = 25; break;
+        case CHAR_EXCLAIMATION: state = 28; break;
+        case CHAR_COLON: state = 31; break;
+        case CHAR_SINGLEQUOTE: state = 34; break;
+        case CHAR_RPAR: state = 39; break;
+      }
+      break;
+    case 1:
+      skipBlank();
+      state = 0;
+      break;
+    case 2:
+      // Todo (
+      readChar();
+      switch (charCodes[currentChar])
+      {
+      case CHAR_TIMES:
+        // nếu phát hiện (* thì bắt đầu của comment
+        // hết comment khi nó gặp *)
+        // không đóng comment sẽ in ra lỗi
+        skipComment();
+        state = 0;
+        return getToken();
+      case CHAR_PERIOD:
+        state = 6;
+        readChar();
+        break;
+      default:
+        token = makeToken(SB_LPAR, lineNo, colNo - 1);
+        // ko read char nua vi neu se doc mat ki tu sau
+        return token;
+      }
+    case 3:
+    case 4:
+    case 5:
+    case 6: // (.
+      state = 0;
+      token = makeToken(SB_LSEL, lineNo, colNo);
+      return token;
+    case 7:
+    case 8:
+    case 9:
+      // Todo letter
+      return readIdentKeyword();
+    case 10:
+    case 11:
+      // Todo number
+      return readNumber();
+    case 12: // +
+      state = 0;
+      token = makeToken(SB_PLUS, lineNo, colNo);
+      readChar();
+      return token;
+    case 13: // -
+      state = 0;
+      token = makeToken(SB_MINUS, lineNo, colNo);
+      readChar();
+      return token;
+    case 14: // *
+      state = 0;
+      token = makeToken(SB_TIMES, lineNo, colNo);
+      readChar();
+      return token;
+    case 15: // /
+      state = 0;
+      token = makeToken(SB_SLASH, lineNo, colNo);
+      readChar();
+      return token;
+    case 16: // =
+      state = 0;
+      token = makeToken(SB_EQ, lineNo, colNo);
+      readChar();
+      return token;
+    case 17: // ,
+      state = 0;
+      token = makeToken(SB_COMMA, lineNo, colNo);
+      readChar();
+      return token;
+    case 18: // ;
+      state = 0;
+      token = makeToken(SB_SEMICOLON, lineNo, colNo);
+      readChar();
+      return token;
+    case 19:
+      // Todo .
+      break;
+    case 20:
+    case 21:
+    case 22:
+      // Todo >
+      break;
+    case 23:
+    case 24:
+    case 25:
+      // Todo <
+      break;
+    case 26:
+    case 27:
+    case 28:
+      // Todo !
+      break;
+    case 29:
+    case 30:
+    case 31:
+      // Todo :
+      break;
+    case 32:
+    case 33:
+    case 34:
+      // Todo '
+      break;
+    case 35:
+    case 36:
+    case 37:
+    case 38:
+    case 39:
+      state = 0;
+      token = makeToken(SB_RPAR, lineNo, colNo);
+      readChar();
+      return token;
+    default:
+      token = makeToken(TK_NONE, lineNo, colNo);
+      error(ERR_INVALIDSYMBOL, lineNo, colNo);
+      readChar();
+      return token;
+      break;
+  }
+
+/*
   // map code ASCII với token tương ứng.
   switch (charCodes[currentChar])
   {
   case CHAR_SPACE:
     // bỏ qua khoảng trắng và đọc kí tự tiếp theo.
-    state = 1;
     skipBlank();
     return getToken();
   case CHAR_LETTER:
@@ -325,6 +471,7 @@ Token *getToken(void)
     readChar();
     return token;
   }
+  */
 }
 
 /******************************************************************/
