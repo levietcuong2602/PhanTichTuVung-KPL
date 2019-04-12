@@ -277,8 +277,8 @@ Token *getToken(void)
       readChar();
       switch (charCodes[currentChar])
       {
-      case CHAR_RPAR: state = 20;
-      default: state = 21;
+      case CHAR_RPAR: state = 20; break;
+      default: state = 21; break;
       }
       return getToken();
     case 20: // .)
@@ -297,8 +297,8 @@ Token *getToken(void)
       readChar();
       switch (charCodes[currentChar])
       {
-      case CHAR_EQ: state = 23;
-      default: state = 24;
+      case CHAR_EQ: state = 23; break;
+      default: state = 24; break;
       }
       return getToken();
     case 23: // >=
@@ -312,8 +312,8 @@ Token *getToken(void)
       readChar();
       switch (charCodes[currentChar])
       {
-      case CHAR_EQ: state = 26;
-      default: state = 27;
+      case CHAR_EQ: state = 26; break;
+      default: state = 27; break;
       }
       return getToken();
     case 26: // <=
@@ -327,8 +327,8 @@ Token *getToken(void)
       readChar();
       switch (charCodes[currentChar])
       {
-      case CHAR_EQ: state = 29;
-      default: state = 30;
+      case CHAR_EQ: state = 29; break;
+      default: state = 30; break;
       }
       return getToken();
     case 29: // !=
@@ -344,8 +344,8 @@ Token *getToken(void)
       readChar();
       switch (charCodes[currentChar])
       {
-      case CHAR_EQ: state = 32;
-      default: state = 33;
+      case CHAR_EQ: state = 32; break;
+      default: state = 33; break;
       }
       return getToken();
     case 32: // :=
