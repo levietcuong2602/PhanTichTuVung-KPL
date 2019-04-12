@@ -32,30 +32,30 @@ void skipBlank()
 
 void skipComment()
 {
-  int state = 0;
-  while (currentChar != EOF && state != 2)
+  while (currentChar != EOF && state != 5)
   {
     readChar();
     switch (charCodes[currentChar])
     {
     case CHAR_TIMES:
-      state = 1;
+      state = 4;
       break;
     case CHAR_RPAR:
-      if (state == 1)
+      if (state == 4)
       {
-        state = 2;
+        state = 5;
         readChar();
       }
       break;
     default:
-      state = 0;
+      state = 3;
       break;
     }
   }
   // error không đóng comment
   if(currentChar == EOF)
     error(ERR_ENDOFCOMMENT, lineNo, colNo);
+  state = 0;
 }
 
 Token *readIdentKeyword(void)
@@ -213,30 +213,31 @@ Token *getToken(void)
         // nếu phát hiện (* thì bắt đầu của comment
         // hết comment khi nó gặp *)
         // không đóng comment sẽ in ra lỗi
-        skipComment();
-        state = 0;
+        state = 3;
         return getToken();
       case CHAR_PERIOD:
         state = 6;
-        readChar();
-        break;
+        return getToken();
       default:
-        token = makeToken(SB_LPAR, lineNo, colNo - 1);
-        // ko read char nua vi neu se doc mat ki tu sau
-        return token;
+        state = 7;
+        return getToken();
       }
     case 3:
-    case 4:
-    case 5:
+      skipComment();
+      state=0;
+      return getToken();
     case 6: // (.
       state = 0;
       token = makeToken(SB_LSEL, lineNo, colNo);
       return token;
     case 7:
+      token = makeToken(SB_LPAR, lineNo, colNo - 1);
+      // ko read char nua vi neu se doc mat ki tu sau
+      return token;
     case 8:
+      state = 0;
       return readIdentKeyword();
     case 10:
-    case 11:
       // Todo number
       return readNumber();
     case 12: // +
