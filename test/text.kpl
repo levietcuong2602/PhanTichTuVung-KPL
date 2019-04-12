@@ -1,0 +1,5 @@
+Program Example1; (* Example 1 *)
+Begin
+x <> y;
+TEXT = '\'';
+End. (* Example 1 *)
