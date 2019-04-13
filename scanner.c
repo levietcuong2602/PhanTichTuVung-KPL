@@ -18,6 +18,7 @@ extern int colNo;
 extern int currentChar;
 extern CharCode charCodes[];
 int state;
+int col, line;
 
 /***************************************************************/
 
@@ -43,18 +44,18 @@ void skipComment()
     case CHAR_RPAR:
       if (state == 4)
       {
+        readChar();
         state = 5;
       }
       break;
     default:
-      state = 0;
+      state = 3;
       break;
     }
   }
   // error không đóng comment
-  if(currentChar == EOF)
+  if(state != 5)
     error(ERR_ENDOFCOMMENT, lineNo, colNo);
-  readChar();
 }
 
 Token *readIdentKeyword(void)
@@ -168,7 +169,6 @@ Token *readConstChar(void)
 Token *getToken(void)
 {
   Token *token;
-  int ln, cn;
 
   if (currentChar == EOF)
   {
@@ -274,6 +274,8 @@ Token *getToken(void)
       readChar();
       return token;
     case 19: // .
+      col = colNo;
+      line = lineNo;
       readChar();
       switch (charCodes[currentChar])
       {
@@ -282,16 +284,11 @@ Token *getToken(void)
       }
       return getToken();
     case 20: // .)
-      ln = lineNo;
-      cn = colNo;
-      token = makeToken(SB_RSEL, ln, cn);
+      token = makeToken(SB_RSEL, line, col);
       readChar();
       return token;
     case 21: // .
-      ln = lineNo;
-      cn = colNo-1;
-      token = makeToken(SB_PERIOD, ln, cn);
-      //readChar();
+      token = makeToken(SB_PERIOD, line, col);
       return token;
     case 22: // >
       readChar();
