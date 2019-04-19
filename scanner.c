@@ -136,7 +136,7 @@ Token *readNumber(void)
   return token;
 }
 
-int readConstChar(void)
+void readConstChar(void)
 {
   beginColNo = colNo;
   beginLineNo = lineNo;
@@ -152,7 +152,7 @@ int readConstChar(void)
     if (charCodes[currentChar] != CHAR_SINGLEQUOTE)
     {
       state = 40;
-      return state;
+      return;
     }
   }
 
@@ -161,10 +161,10 @@ int readConstChar(void)
   {
   case CHAR_SINGLEQUOTE:
     state = 36;
-    return state;
+    return;
   default:
     state = 40;
-    return state;
+    return;
   }
 }
 
