@@ -24,7 +24,7 @@ BEGIN
   FOR  N := 1  TO  4  DO  
     BEGIN
       FOR  I:=1  TO  4  DO  
-        CALL  WRITEC(' ');
+        CALL  WRITEC('A');
       CALL  READC(C);  
       CALL  WRITEC(C)
     END;

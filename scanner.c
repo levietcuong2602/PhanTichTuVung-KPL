@@ -20,6 +20,12 @@ extern CharCode charCodes[];
 int state;
 int col, line;
 
+// readConstChar
+Token *token;
+int beginColNo;
+int beginLineNo;
+char string[MAX_IDENT_LEN + 1];
+
 /***************************************************************/
 
 void skipBlank()
@@ -130,12 +136,10 @@ Token *readNumber(void)
   return token;
 }
 
-Token *readConstChar(void)
+int readConstChar(void)
 {
-  Token *token;
-  int beginColNo = colNo;
-  int beginLineNo = lineNo;
-  char string[MAX_IDENT_LEN + 1];
+  beginColNo = colNo;
+  beginLineNo = lineNo;
 
   readChar();
   string[0] = currentChar;
@@ -148,9 +152,7 @@ Token *readConstChar(void)
     if (charCodes[currentChar] != CHAR_SINGLEQUOTE)
     {
       state = 40;
-      token = makeToken(TK_NONE, lineNo, colNo);
-      error(ERR_INVALIDCHARCONSTANT, beginColNo, beginLineNo);
-      return token;
+      return state;
     }
   }
 
@@ -159,15 +161,10 @@ Token *readConstChar(void)
   {
   case CHAR_SINGLEQUOTE:
     state = 36;
-    token = makeToken(TK_CHAR, beginLineNo, beginColNo);
-    strcpy(token->string, string);
-    readChar();
-    return token;
+    return state;
   default:
     state = 40;
-    token = makeToken(TK_NONE, lineNo, colNo);
-    error(ERR_INVALIDCHARCONSTANT, beginColNo, beginLineNo);
-    return token;
+    return state;
   }
 }
 
@@ -361,7 +358,13 @@ Token *getToken(void)
       // nếu là 4 dấu '''' -> return '
       // và chỉ cho phép bên trong '' là 1 kí tự
       // nếu quá sẽ báo lỗi simple
-      return readConstChar();
+      readConstChar();
+      return getToken();
+    case 36:
+      token = makeToken(TK_CHAR, beginLineNo, beginColNo);
+      strcpy(token->string, string);
+      readChar();
+      return token;
     case 37: // eof
       return makeToken(TK_EOF, lineNo, colNo); // tạo token eof
     case 39: // )
@@ -370,7 +373,9 @@ Token *getToken(void)
       readChar();
       return token;
     case 40:
-    
+      token = makeToken(TK_NONE, lineNo, colNo);
+      error(ERR_INVALIDCHARCONSTANT, lineNo, colNo);
+      return token;
     case 41:
       token = makeToken(TK_NONE, lineNo, colNo - 1);
       error(ERR_ENDOFCOMMENT, lineNo, colNo);
