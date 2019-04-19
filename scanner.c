@@ -200,11 +200,7 @@ Token *getToken(void)
         case CHAR_COLON: state = 31; break;
         case CHAR_SINGLEQUOTE: state = 34; break;
         case CHAR_RPAR: state = 39; break;
-        default:
-          token = makeToken(TK_NONE, lineNo, colNo);
-          error(ERR_INVALIDSYMBOL, lineNo, colNo);
-          readChar();
-          return token;
+        default: state = 38; break;
       }
       return getToken();
     case 1: // space
