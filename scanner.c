@@ -54,8 +54,13 @@ void skipComment()
     }
   }
   // error không đóng comment
-  if(state != 5)
-    error(ERR_ENDOFCOMMENT, lineNo, colNo);
+  if(state == 3 || state == 4)
+  {
+    state = 41;
+  }
+  else
+  // đúng: tiếp tục duyệt
+    state = 0;
 }
 
 Token *readIdentKeyword(void)
@@ -142,7 +147,7 @@ Token *readConstChar(void)
     readChar();
     if (charCodes[currentChar] != CHAR_SINGLEQUOTE)
     {
-      state = 38;
+      state = 40;
       token = makeToken(TK_NONE, lineNo, colNo);
       error(ERR_INVALIDCHARCONSTANT, beginColNo, beginLineNo);
       return token;
@@ -159,7 +164,7 @@ Token *readConstChar(void)
     readChar();
     return token;
   default:
-    state = 38;
+    state = 40;
     token = makeToken(TK_NONE, lineNo, colNo);
     error(ERR_INVALIDCHARCONSTANT, beginColNo, beginLineNo);
     return token;
@@ -170,7 +175,7 @@ Token *getToken(void)
 {
   Token *token;
 
-  if (currentChar == EOF)
+  if (currentChar == EOF && state != 41)
   {
     state = 37;
   }
@@ -223,7 +228,6 @@ Token *getToken(void)
       return getToken();
     case 3: // (* comment
       skipComment();
-      state = 0;
       return getToken();
     case 6: // (.
       state = 0;
@@ -364,6 +368,12 @@ Token *getToken(void)
       state = 0;
       token = makeToken(SB_RPAR, lineNo, colNo);
       readChar();
+      return token;
+    case 40:
+    
+    case 41:
+      token = makeToken(TK_NONE, lineNo, colNo - 1);
+      error(ERR_ENDOFCOMMENT, lineNo, colNo);
       return token;
     default:
       token = makeToken(TK_NONE, lineNo, colNo);
